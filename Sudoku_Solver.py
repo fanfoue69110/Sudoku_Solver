@@ -31,14 +31,49 @@ class Sudoku:
             if (x in range(self.blocks[param][0] , self.blocks[param][0] + self.step)) and (y in range(self.blocks[param][1] , self.blocks[param][1] + self.step)):
                 return param
 
+    def prioritizecells(self):
+        """Sort each empty cell by decreasing complexity number """
+        rowmax, colmax = self.grid.shape
+        self.grade = pd.DataFrame()
+        grades = []
+        for col in range(0,colmax):
+            for row in range(0,rowmax):
+                if self.grid.loc[row,col] == 0:
+                    self.grade.loc[row,col] = self.gradecell((row,col))
+                    grades.append( self.gradecell((row,col)) )
+                else:
+                    self.grade.loc[row,col] = 0
+        grades = set(grades)
 
-    def notecell(self,coords):
-        """ Returns how many blanks are to be filled based on a tuple of cell's cordinates"""
+        # Create a dict with rank oh each grades
+        inc = 1
+        gradesdict={}
+        gradesdict[0] = 0
+        for grade in set(grades) :
+            gradesdict[grade] = inc
+            inc += 1
+
+
+        givengrade = 1
+        self.gradetmp = pd.DataFrame()
+        for col in range(0,colmax):
+            for row in range(0,rowmax):
+                for grade in grades:
+                    if self.grade.loc[row,col] == grade:
+                        print(self.grade.loc[row,col] , grade)
+                        self.gradetmp.loc[row,col] = gradesdict[grade]
+                        break
+                    else:
+                        self.gradetmp.loc[row,col] = 0
+
+
+
+    def gradecell(self,coords):
+        """ Returns how many blanks are to be filled based on a tuple of cell's cordinates
+        cell's grade is called 'complexity number' """
         row , col = coords
         block_number = self.whichblock(coords)
         return self.existinblock(block_number) + self.existincol(col) + self.existinrow(row)
-
-
 
     def existincol(self,col_number):
         """ Returns how many unsolved cells in a column """
@@ -57,7 +92,6 @@ class Sudoku:
         subset = subset.loc[:,range(y_origin ,(y_origin + self.step))]
         values = []
         for col in subset.columns :
-            print(subset.loc[:,col])
             for val in list(subset.loc[:,col]):
                 values.append(val)
         return values.count(0)
@@ -71,4 +105,7 @@ if __name__ == '__main__':
     sudoku = Sudoku(grille)
     print(sudoku.grid)
     print(sudoku.whichblock((6,2)))
-    print(sudoku.notecell((4,4)))
+    print(sudoku.gradecell((4,4)))
+    sudoku.prioritizecells()
+    print(sudoku.grade)
+    print(sudoku.gradetmp)
